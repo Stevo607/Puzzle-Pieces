@@ -43,6 +43,7 @@
     h1 {
       margin-bottom: 10px;
       font-weight: 600;
+      font-size: 2rem;
     }
 
     /* --- Score Display --- */
@@ -125,8 +126,8 @@
     /* --- Board Container (Puzzle Grid) --- 
          Force the board to be square. */
     #board-container {
-      width: 70vmin;  /* Adjust as desired */
-      height: 70vmin; /* Square board */
+      width: 70vmin;
+      height: 70vmin;
       background-color: var(--board-bg);
       border: 1px solid var(--slot-border);
       border-radius: 8px;
@@ -151,7 +152,6 @@
       background-color: rgba(0, 0, 0, 0.1);
     }
     .board-slot.hint {
-      /* Ensure slot is positioned relative for the pseudo-element */
       position: relative;
     }
     .board-slot.hint::before {
@@ -198,7 +198,6 @@
       opacity: 1;
       z-index: 1;
     }
-    /* Ensure that when a piece is inside a slot it fills it */
     .board-slot .puzzle-piece {
       width: 100%;
       height: 100%;
@@ -241,6 +240,48 @@
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+
+    /* --- Media Queries for Responsiveness --- */
+    /* For tablets and small desktops */
+    @media screen and (max-width: 900px) {
+      .puzzle-area {
+        flex-direction: column;
+        align-items: center;
+      }
+      #piece-container, #board-container {
+        width: 90vw;
+        max-width: 500px;
+        /* The board must remain square */
+        height: 90vw;
+        max-height: 500px;
+      }
+      .controls {
+        flex-direction: column;
+      }
+    }
+
+    /* For mobile devices */
+    @media screen and (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      #score-display {
+        font-size: 1rem;
+        padding: 4px 10px;
+      }
+      .controls label,
+      .controls button,
+      .controls select {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+      }
+      #piece-container, #board-container {
+        width: 95vw;
+        max-width: 350px;
+        height: 95vw;
+        max-height: 350px;
+      }
     }
   </style>
 </head>
@@ -325,7 +366,6 @@
       'images/Stephen.jpg',
       'images/train.jpg',
       'images/trio2.jpg',
-      // ... add more paths as needed ...
       'images/fans.jpg'
     ];
     if (puzzleImages.length === 0) {
@@ -470,12 +510,11 @@
     }
 
     function createBoard() {
-      // Setup grid: force NxN square cells.
       boardContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
       boardContainer.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
       boardContainer.innerHTML = '';
 
-      const boardWidth = boardContainer.clientWidth;  // Since board is square
+      const boardWidth = boardContainer.clientWidth;
       const cellSize = boardWidth / gridSize;
 
       for (let i = 0; i < pieceCount; i++) {
@@ -483,11 +522,8 @@
         slot.classList.add('board-slot', 'hint');
         slot.dataset.index = i;
 
-        // Calculate grid coordinates
         const row = Math.floor(i / gridSize);
         const col = i % gridSize;
-
-        // Set CSS variables for the hint pseudo-element
         slot.style.setProperty("--hint-image", `url(${currentImage.src})`);
         slot.style.setProperty("--hint-size", `${boardWidth}px ${boardWidth}px`);
         slot.style.setProperty("--hint-position", `-${col * cellSize}px -${row * cellSize}px`);
@@ -502,7 +538,7 @@
       const pieceElems = [];
       pieceContainer.innerHTML = '';
 
-      const boardWidth = boardContainer.clientWidth; // Square board
+      const boardWidth = boardContainer.clientWidth;
       const cellSize = boardWidth / gridSize;
       if (boardWidth === 0) {
         console.error("Board size is 0. Retrying...");
@@ -517,11 +553,9 @@
         piece.id = `piece-${i}`;
         piece.dataset.index = i;
 
-        // Each piece is a perfect square equal to the cell size.
         piece.style.width = `${cellSize}px`;
         piece.style.height = `${cellSize}px`;
 
-        // Calculate background positioning for the piece
         const row = Math.floor(i / gridSize);
         const col = i % gridSize;
         const offsetX = col * cellSize;
@@ -538,14 +572,11 @@
       pieceElems.forEach(p => pieceContainer.appendChild(p));
     }
 
-    // --- Drag and Drop Handlers ---
     function addDragAndDropHandlers() {
-      // For the loose puzzle pieces
       pieceContainer.querySelectorAll('.puzzle-piece').forEach(p => {
         p.addEventListener('dragstart', handleDragStart);
         p.addEventListener('dragend', handleDragEnd);
       });
-      // For the board slots
       boardSlots.forEach(s => {
         s.addEventListener('dragover', handleDragOver);
         s.addEventListener('dragleave', handleDragLeave);
@@ -596,7 +627,6 @@
           const pieceIndex = parseInt(draggedPiece.dataset.index);
           const slotIndex = parseInt(targetSlot.dataset.index);
           if (pieceIndex === slotIndex) {
-            // Correct placement: move the piece and remove the hint overlay.
             targetSlot.appendChild(draggedPiece);
             draggedPiece.style.width = '';
             draggedPiece.style.height = '';
@@ -604,7 +634,6 @@
             draggedPiece.classList.remove('dragging');
             draggedPiece.classList.add('placed');
             draggedPiece.style.cursor = 'default';
-            // Remove the hint pseudo-element by removing the "hint" class.
             targetSlot.classList.remove('hint');
             draggedPiece.removeEventListener('dragstart', handleDragStart);
             draggedPiece.removeEventListener('dragend', handleDragEnd);
@@ -625,7 +654,6 @@
       draggedPiece = null;
     }
 
-    // --- Game Completion ---
     function checkCompletion() {
       if (placedPiecesCount === pieceCount) {
         completionMessage.style.display = 'block';
@@ -634,7 +662,6 @@
       }
     }
 
-    // --- Event Listeners Setup ---
     startButton.addEventListener('click', startGame);
     musicToggleButton.addEventListener('click', toggleMusic);
     document.addEventListener('DOMContentLoaded', () => {
