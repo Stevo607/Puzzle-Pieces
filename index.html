@@ -533,6 +533,119 @@
       }
     }
 
+    // --- Helper function to generate SVG path for an edge ---
+    // type: "top", "right", "bottom", "left" (indicates direction of drawing and knob orientation)
+    // shape: "straight", "knob", "blank"
+    // length: length of the edge (cellSize)
+    function getEdgePathString(type, shape, length) {
+      const knobWidthRatio = 0.4;    // Knob base width as a ratio of edge length
+      const knobHeightRatio = 0.18;   // Knob height (protrusion/indentation) as a ratio of edge length
+      const edgeOffsetRatio = (1 - knobWidthRatio) / 2; // Offset for knob from edge corners
+
+      const kw = length * knobWidthRatio;  // knob base width in pixels
+      const kh = length * knobHeightRatio; // knob height in pixels
+      const eo = length * edgeOffsetRatio; // edge offset in pixels
+
+      let pathSegment = "";
+
+      if (shape === "straight") {
+        if (type === "top")    pathSegment = `l${length},0`;
+        else if (type === "right")  pathSegment = `l0,${length}`;
+        else if (type === "bottom") pathSegment = `l${-length},0`; // Drawn from right-to-left
+        else if (type === "left")   pathSegment = `l0,${-length}`; // Drawn from bottom-to-top
+        return pathSegment;
+      }
+
+      // dir = 1 for knob (outward), -1 for blank (inward)
+      const dir = shape === "knob" ? 1 : -1;
+
+      // Control points for Bezier curves. These are relative to the start of the curve segment.
+      // cx1, cy1, cx2, cy2, ex, ey (end point)
+      // Using cubic Bezier: C dx1 dy1, dx2 dy2, dx dy
+      // Or quadratic Bezier: Q dx1 dy1, dx dy
+      // For simplicity, using Q for a more rounded knob/blank.
+      // A knob protrudes, a blank indents.
+      // The path commands are relative (lowercase 'l', 'q', 'c')
+
+      if (type === "top") { // Drawing from left to right
+        pathSegment = `l${eo},0 `; // Line to start of knob/blank base
+        // Curve out/in: Q controlX controlY, endX endY
+        pathSegment += `q ${kw / 4},${dir * kh * 1.5} ${kw / 2},${dir * kh} `; // Control point pulls curve, endpoint
+        pathSegment += `q ${kw / 4},${dir * kh * -1.5} ${kw / 2},${-dir * kh} `; // Curve back to edge line
+        pathSegment += `l${eo},0`; // Line to end of edge
+      } else if (type === "right") { // Drawing from top to bottom
+        pathSegment = `l0,${eo} `;
+        pathSegment += `q ${dir * kh * 1.5},${kw / 4} ${dir * kh},${kw / 2} `;
+        pathSegment += `q ${dir * kh * -1.5},${kw / 4} ${-dir * kh},${kw / 2} `;
+        pathSegment += `l0,${eo}`;
+      } else if (type === "bottom") { // Drawing from right to left
+        pathSegment = `l${-eo},0 `;
+        // For bottom, the knob "points down", so Y direction for dir*kh is positive if canvas Y is downwards
+        // However, since we are drawing relative, and this is a bottom edge, Y protrusion is still dir*kh
+        pathSegment += `q ${-kw / 4},${dir * kh * 1.5} ${-kw / 2},${dir * kh} `;
+        pathSegment += `q ${-kw / 4},${dir * kh * -1.5} ${-kw / 2},${-dir * kh} `;
+        pathSegment += `l${-eo},0`;
+      } else if (type === "left") { // Drawing from bottom to top
+        pathSegment = `l0,${-eo} `;
+        pathSegment += `q ${dir * kh * 1.5},${-kw / 4} ${dir * kh},${-kw / 2} `;
+        pathSegment += `q ${dir * kh * -1.5},${-kw / 4} ${-dir * kh},${-kw / 2} `;
+        pathSegment += `l0,${-eo}`;
+      }
+      return pathSegment;
+    }
+
+
+    // --- Helper function to generate SVG path for an edge ---
+    // type: "top", "right", "bottom", "left" (indicates direction of drawing and knob orientation)
+    // shape: "straight", "knob", "blank"
+    // length: length of the edge (cellSize)
+    function getEdgePathString(type, shape, length) {
+      const knobWidthRatio = 0.4;    // Knob base width as a ratio of edge length
+      const knobHeightRatio = 0.18;   // Knob height (protrusion/indentation) as a ratio of edge length
+      const edgeOffsetRatio = (1 - knobWidthRatio) / 2; // Offset for knob from edge corners
+
+      const kw = length * knobWidthRatio;  // knob base width in pixels
+      const kh = length * knobHeightRatio; // knob height in pixels
+      const eo = length * edgeOffsetRatio; // edge offset in pixels
+
+      let pathSegment = "";
+
+      if (shape === "straight") {
+        if (type === "top")    pathSegment = `l${length},0`;
+        else if (type === "right")  pathSegment = `l0,${length}`;
+        else if (type === "bottom") pathSegment = `l${-length},0`; // Drawn from right-to-left
+        else if (type === "left")   pathSegment = `l0,${-length}`; // Drawn from bottom-to-top
+        return pathSegment;
+      }
+
+      const dir = shape === "knob" ? 1 : -1; // 1 for knob (outward), -1 for blank (inward)
+
+      // Using quadratic Bezier curves (q) for simpler, rounded knobs/blanks.
+      // Relative path commands are used (lowercase).
+      if (type === "top") { // Drawing from left to right
+        pathSegment = `l${eo},0 `; // Line to start of knob/blank base
+        pathSegment += `q ${kw / 4},${dir * kh * 1.5} ${kw / 2},${dir * kh} `; // Control point pulls curve, then endpoint
+        pathSegment += `q ${kw / 4},${dir * kh * -1.5} ${kw / 2},${-dir * kh} `; // Curve back to edge line
+        pathSegment += `l${eo},0`; // Line to end of edge
+      } else if (type === "right") { // Drawing from top to bottom
+        pathSegment = `l0,${eo} `;
+        pathSegment += `q ${dir * kh * 1.5},${kw / 4} ${dir * kh},${kw / 2} `;
+        pathSegment += `q ${dir * kh * -1.5},${kw / 4} ${-dir * kh},${kw / 2} `;
+        pathSegment += `l0,${eo}`;
+      } else if (type === "bottom") { // Drawing from right to left
+        pathSegment = `l${-eo},0 `;
+        pathSegment += `q ${-kw / 4},${dir * kh * 1.5} ${-kw / 2},${dir * kh} `;
+        pathSegment += `q ${-kw / 4},${dir * kh * -1.5} ${-kw / 2},${-dir * kh} `;
+        pathSegment += `l${-eo},0`;
+      } else if (type === "left") { // Drawing from bottom to top
+        pathSegment = `l0,${-eo} `;
+        pathSegment += `q ${dir * kh * 1.5},${-kw / 4} ${dir * kh},${-kw / 2} `;
+        pathSegment += `q ${dir * kh * -1.5},${-kw / 4} ${-dir * kh},${-kw / 2} `;
+        pathSegment += `l0,${-eo}`;
+      }
+      return pathSegment;
+    }
+
     function createPieces() {
       pieces = [];
       const pieceElems = [];
